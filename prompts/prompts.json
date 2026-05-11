@@ -1,0 +1,16 @@
+{
+  "prompts": [
+    {
+      "id": "idle_loop",
+      "name": "Idle · loop",
+      "category": ["loop"],
+      "text": "Character standing still, subtle breathing motion, slight body sway, hair and clothing moving gently in wind. Seamless loop, green bg #00FF00, 9:16 vertical frame."
+    },
+    {
+      "id": "wave_hello",
+      "name": "Wave hello · loop",
+      "category": ["interakcja", "loop"],
+      "text": "Character looking at camera, raising one arm and waving enthusiastically with a warm smile. Looped gesture, green bg #00FF00, 9:16 portrait."
+    }
+  ]
+}

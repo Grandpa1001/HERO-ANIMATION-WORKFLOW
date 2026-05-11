@@ -1,0 +1,42 @@
+{
+  "heroes": [
+    {
+      "id": "zara",
+      "name": "Zara",
+      "description": "Wojowniczka z zieloną zbroją. Dynamiczny charakter, szybkie ruchy. Używana w onboardingu i powiadomieniach.",
+      "tags": [
+        "fantasy",
+        "female",
+        "dynamic"
+      ],
+      "png": "/heroes/zara/png/zara_main.png",
+      "animations": {
+        "idle": {
+          "mp4": null,
+          "gif": null,
+          "status": "missing"
+        },
+        "run": {
+          "mp4": null,
+          "gif": null,
+          "status": "missing"
+        },
+        "wave": {
+          "mp4": null,
+          "gif": null,
+          "status": "missing"
+        },
+        "jump_in": {
+          "mp4": null,
+          "gif": null,
+          "status": "missing"
+        },
+        "dance": {
+          "mp4": null,
+          "gif": null,
+          "status": "missing"
+        }
+      }
+    }
+  ]
+}
