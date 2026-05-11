@@ -1,6 +1,11 @@
 import fs from "fs";
 import path from "path";
-import type { AnimationEntry, Hero, HeroesFile } from "@/types/heroes";
+import type {
+  AnimationEntry,
+  AnimationStatus,
+  Hero,
+  HeroesFile,
+} from "@/types/heroes";
 import { DEFAULT_ANIMATION_KEYS } from "@/types/heroes";
 import { getHeroesRoot } from "@/lib/paths";
 
@@ -38,7 +43,13 @@ function uniqueId(base: string, taken: Set<string>): string {
 export function defaultAnimations(): Record<string, AnimationEntry> {
   const o: Record<string, AnimationEntry> = {};
   for (const k of DEFAULT_ANIMATION_KEYS) {
-    o[k] = { mp4: null, gif: null, status: "missing" };
+    o[k] = {
+      mp4: null,
+      gif: null,
+      webp: null,
+      apng: null,
+      status: "missing",
+    };
   }
   return o;
 }
@@ -68,33 +79,49 @@ export function rescanHeroAnimations(hero: Hero): Hero {
     animations: { ...hero.animations },
   };
 
-  for (const [key, entry] of Object.entries(next.animations)) {
+  for (const [key] of Object.entries(next.animations)) {
     const mp4Name = `${hero.id}_${key}.mp4`;
     const gifName = `${hero.id}_${key}.gif`;
+    const webpName = `${hero.id}_${key}.webp`;
+    const apngName = `${hero.id}_${key}.apng`;
     const mp4Full = path.join(root, hero.id, "mp4", mp4Name);
-    const gifFull = path.join(root, hero.id, "gif", gifName);
-    const hasGif = fs.existsSync(gifFull);
+    const gifDir = path.join(root, hero.id, "gif");
+    const gifFull = path.join(gifDir, gifName);
+    const webpFull = path.join(gifDir, webpName);
+    const apngFull = path.join(gifDir, apngName);
+    const hasG = fs.existsSync(gifFull);
+    const hasW = fs.existsSync(webpFull);
+    const hasA = fs.existsSync(apngFull);
+    const hasRaster = hasG || hasW || hasA;
     const hasMp4 = fs.existsSync(mp4Full);
 
-    let status = entry.status;
+    let status: AnimationStatus;
     let mp4: string | null = null;
     let gif: string | null = null;
+    let webp: string | null = null;
+    let apng: string | null = null;
 
-    if (hasGif) {
+    if (hasRaster) {
       status = "done";
-      gif = gifName;
-      mp4 = hasMp4 ? mp4Name : entry.mp4;
+      gif = hasG ? gifName : null;
+      webp = hasW ? webpName : null;
+      apng = hasA ? apngName : null;
+      mp4 = hasMp4 ? mp4Name : null;
     } else if (hasMp4) {
       status = "pending";
       mp4 = mp4Name;
       gif = null;
+      webp = null;
+      apng = null;
     } else {
       status = "missing";
       mp4 = null;
       gif = null;
+      webp = null;
+      apng = null;
     }
 
-    next.animations[key] = { mp4, gif, status };
+    next.animations[key] = { mp4, gif, webp, apng, status };
   }
 
   return next;

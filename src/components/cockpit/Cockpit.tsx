@@ -7,14 +7,16 @@ import { HeroSidebar } from "./HeroSidebar";
 import { HeroCard } from "./HeroCard";
 import { NewHeroForm } from "./NewHeroForm";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
+import { FilesPanel } from "@/components/files/FilesPanel";
+import { PreviewGallery } from "@/components/preview/PreviewGallery";
 
 export type CockpitTab = "bohater" | "prompt" | "pliki" | "preview";
 
 const TABS: { id: CockpitTab; label: string; stage?: string }[] = [
   { id: "bohater", label: "Bohater" },
   { id: "prompt", label: "Prompt" },
-  { id: "pliki", label: "Pliki", stage: "Etap 3" },
-  { id: "preview", label: "Preview", stage: "Etap 5" },
+  { id: "pliki", label: "Pliki" },
+  { id: "preview", label: "Preview" },
 ];
 
 export function Cockpit() {
@@ -60,9 +62,9 @@ export function Cockpit() {
               {tab === "prompt" &&
                 "Etap 2: biblioteka promptów — zapis, filtr, kopiowanie do fal.ai"}
               {tab === "pliki" &&
-                "Etap 3 (wkrótce): widok plików i watcher folderów"}
+                "Etap 3: drzewo plików, watcher + SSE, konwersja MP4 → GIF"}
               {tab === "preview" &&
-                "Etap 5 (wkrótce): galeria podglądu animacji 9:16"}
+                "Etap 5: podgląd 9:16, zmiana animacji, pobieranie GIF/WebP"}
             </p>
           </div>
           <nav className="flex flex-wrap gap-1" aria-label="Zakładki kokpitu">
@@ -189,28 +191,76 @@ export function Cockpit() {
           </>
         ) : tab === "prompt" ? (
           <PromptLibrary hero={selected} />
-        ) : (
-          <main className="flex flex-1 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 p-12 text-center text-neutral-600">
-            <div>
-              <p className="text-lg font-medium text-neutral-800">
-                Zakładka w przygotowaniu
-              </p>
-              <p className="mt-2 max-w-md text-sm">
-                {tab === "pliki" &&
-                  "Widok plików i watcher folderów (Etap 3)."}
-                {tab === "preview" &&
-                  "Galeria podglądu animacji 9:16 (Etap 5)."}
-              </p>
-              <button
-                type="button"
-                onClick={() => setTab("bohater")}
-                className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-              >
-                Wróć do Bohatera
-              </button>
-            </div>
-          </main>
-        )}
+        ) : tab === "pliki" ? (
+          <div className="flex w-full flex-col gap-6 lg:flex-row">
+            <aside className="w-full shrink-0 lg:w-56">
+              <HeroSidebar
+                heroes={heroes}
+                selectedId={selectedId}
+                onSelect={(id) => {
+                  setCreating(false);
+                  setSelectedId(id);
+                }}
+                onNew={() => {
+                  setTab("bohater");
+                  setCreating(true);
+                  setSelectedId(null);
+                }}
+                showNewButton={false}
+              />
+            </aside>
+            <FilesPanel
+              heroId={selectedId}
+              heroes={heroes}
+              onGoNewHero={() => {
+                setTab("bohater");
+                setCreating(true);
+                setSelectedId(null);
+              }}
+              onRefreshHeroes={refresh}
+            />
+          </div>
+        ) : tab === "preview" ? (
+          <div className="flex w-full flex-col gap-6 lg:flex-row">
+            <aside className="w-full shrink-0 lg:w-56">
+              <HeroSidebar
+                heroes={heroes}
+                selectedId={selectedId}
+                onSelect={(id) => {
+                  setCreating(false);
+                  setSelectedId(id);
+                }}
+                onNew={() => {
+                  setTab("bohater");
+                  setCreating(true);
+                  setSelectedId(null);
+                }}
+                showNewButton={false}
+              />
+            </aside>
+            <section className="min-w-0 flex-1">
+              {loadError ? (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  {loadError}
+                </p>
+              ) : null}
+              {selected ? (
+                <PreviewGallery
+                  hero={selected}
+                  onGoPrompt={() => setTab("prompt")}
+                  onHeroRefresh={refresh}
+                />
+              ) : (
+                <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-neutral-600">
+                  <p className="font-medium">Wybierz bohatera</p>
+                  <p className="mt-2 text-sm">
+                    Lista po lewej — podgląd wymaga zapisanej postaci.
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
+        ) : null}
       </div>
     </div>
   );

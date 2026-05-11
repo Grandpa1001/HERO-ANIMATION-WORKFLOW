@@ -3,6 +3,8 @@ export type AnimationStatus = "done" | "pending" | "missing";
 export type AnimationEntry = {
   mp4: string | null;
   gif: string | null;
+  webp: string | null;
+  apng: string | null;
   status: AnimationStatus;
 };
 

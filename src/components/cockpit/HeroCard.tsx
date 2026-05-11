@@ -16,7 +16,7 @@ type Props = {
 };
 
 function statusLabel(s: string): string {
-  if (s === "done") return "GIF gotowy";
+  if (s === "done") return "Eksport gotowy (GIF / WebP / APNG)";
   if (s === "pending") return "MP4 oczekuje konwersji";
   return "Brak";
 }

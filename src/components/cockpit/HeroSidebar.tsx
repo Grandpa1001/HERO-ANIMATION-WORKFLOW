@@ -8,6 +8,8 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  /** Domyślnie true — ukryj na zakładce Pliki. */
+  showNewButton?: boolean;
 };
 
 function StatusDots({ hero }: { hero: Hero }) {
@@ -42,6 +44,7 @@ export function HeroSidebar({
   selectedId,
   onSelect,
   onNew,
+  showNewButton = true,
 }: Props) {
   return (
     <div className="flex flex-col gap-2">
@@ -66,13 +69,15 @@ export function HeroSidebar({
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        onClick={onNew}
-        className="mt-1 rounded-lg border border-dashed border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
-      >
-        + Nowy bohater
-      </button>
+      {showNewButton ? (
+        <button
+          type="button"
+          onClick={onNew}
+          className="mt-1 rounded-lg border border-dashed border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+        >
+          + Nowy bohater
+        </button>
+      ) : null}
     </div>
   );
 }
