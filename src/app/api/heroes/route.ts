@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createHero, listHeroesRescanned } from "@/lib/heroes-store";
+import { listPromptAnimationIds } from "@/lib/prompts-store";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const heroes = listHeroesRescanned();
-  return NextResponse.json({ heroes });
+  return NextResponse.json({
+    heroes,
+    promptAnimationIds: listPromptAnimationIds(),
+  });
 }
 
 export async function POST(req: Request) {
@@ -29,7 +33,10 @@ export async function POST(req: Request) {
       : [];
 
     const hero = createHero({ name, description, tags });
-    return NextResponse.json({ hero }, { status: 201 });
+    return NextResponse.json(
+      { hero, promptAnimationIds: listPromptAnimationIds() },
+      { status: 201 },
+    );
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Nie udało się utworzyć bohatera." }, { status: 500 });

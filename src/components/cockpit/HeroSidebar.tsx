@@ -6,14 +6,22 @@ import { sortAnimationKeys } from "@/lib/anim-labels";
 type Props = {
   heroes: Hero[];
   selectedId: string | null;
+  /** Kolejność slotów = identyfikatory promptów z biblioteki. */
+  animationKeyOrder?: string[];
   onSelect: (id: string) => void;
   onNew: () => void;
   /** Domyślnie true — ukryj na zakładce Pliki. */
   showNewButton?: boolean;
 };
 
-function StatusDots({ hero }: { hero: Hero }) {
-  const keys = sortAnimationKeys(Object.keys(hero.animations));
+function StatusDots({
+  hero,
+  animationKeyOrder,
+}: {
+  hero: Hero;
+  animationKeyOrder?: string[];
+}) {
+  const keys = sortAnimationKeys(Object.keys(hero.animations), animationKeyOrder);
   const maxDots = 5;
   const shown = keys.slice(0, maxDots);
 
@@ -42,6 +50,7 @@ function StatusDots({ hero }: { hero: Hero }) {
 export function HeroSidebar({
   heroes,
   selectedId,
+  animationKeyOrder,
   onSelect,
   onNew,
   showNewButton = true,
@@ -64,7 +73,7 @@ export function HeroSidebar({
               }`}
             >
               <span className="truncate font-medium">{h.name}</span>
-              <StatusDots hero={h} />
+              <StatusDots hero={h} animationKeyOrder={animationKeyOrder} />
             </button>
           </li>
         ))}

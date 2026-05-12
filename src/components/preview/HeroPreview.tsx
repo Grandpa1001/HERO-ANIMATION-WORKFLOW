@@ -11,6 +11,8 @@ type Props = {
   /** Podgląd MP4 gdy brak rastra, a status pending */
   mp4Url: string | null;
   mp4Filename: string | null;
+  /** Sugerowana nazwa przy „Zapisz jako” / a download (kanoniczna: `{id}_{klucz}.mp4`) */
+  mp4DownloadFilename?: string | null;
   status: AnimationStatus;
   animationLabel: string;
 };
@@ -20,6 +22,7 @@ export function HeroPreview({
   rasterUrl,
   mp4Url,
   mp4Filename,
+  mp4DownloadFilename,
   status,
   animationLabel,
 }: Props) {
@@ -77,6 +80,15 @@ export function HeroPreview({
         <p className="font-mono text-xs text-neutral-500">
           {dims.w}×{dims.h}px
         </p>
+      ) : null}
+      {status === "pending" && mp4Url && mp4DownloadFilename ? (
+        <a
+          href={mp4Url}
+          download={mp4DownloadFilename}
+          className="text-sm font-medium text-neutral-800 underline decoration-neutral-400 underline-offset-2 hover:text-neutral-950"
+        >
+          Pobierz MP4 ({mp4DownloadFilename})
+        </a>
       ) : null}
     </div>
   );

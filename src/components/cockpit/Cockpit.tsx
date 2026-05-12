@@ -9,14 +9,16 @@ import { NewHeroForm } from "./NewHeroForm";
 import { PromptLibrary } from "@/components/prompts/PromptLibrary";
 import { FilesPanel } from "@/components/files/FilesPanel";
 import { PreviewGallery } from "@/components/preview/PreviewGallery";
+import { PipelineSettings } from "@/components/settings/PipelineSettings";
 
-export type CockpitTab = "bohater" | "prompt" | "pliki" | "preview";
+export type CockpitTab = "bohater" | "prompt" | "pliki" | "preview" | "ustawienia";
 
 const TABS: { id: CockpitTab; label: string; stage?: string }[] = [
   { id: "bohater", label: "Bohater" },
   { id: "prompt", label: "Prompt" },
   { id: "pliki", label: "Pliki" },
   { id: "preview", label: "Preview" },
+  { id: "ustawienia", label: "Ustawienia" },
 ];
 
 export function Cockpit() {
@@ -25,14 +27,20 @@ export function Cockpit() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /** Kolejność slotów animacji = identyfikatory promptów z biblioteki. */
+  const [promptAnimationIds, setPromptAnimationIds] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     setLoadError(null);
     try {
       const res = await fetch("/api/heroes");
       if (!res.ok) throw new Error("fetch");
-      const data = (await res.json()) as { heroes: Hero[] };
+      const data = (await res.json()) as {
+        heroes: Hero[];
+        promptAnimationIds?: string[];
+      };
       setHeroes(data.heroes);
+      setPromptAnimationIds(data.promptAnimationIds ?? []);
       setSelectedId((cur) => {
         if (cur && data.heroes.some((h) => h.id === cur)) return cur;
         return data.heroes[0]?.id ?? null;
@@ -65,6 +73,8 @@ export function Cockpit() {
                 "Etap 3: drzewo plików, watcher + SSE, konwersja MP4 → GIF"}
               {tab === "preview" &&
                 "Etap 5: podgląd 9:16, zmiana animacji, pobieranie GIF/WebP"}
+              {tab === "ustawienia" &&
+                "Etap 6: edycja pipeline.config.json (chromakey, eksport, fal.ai, ścieżki)"}
             </p>
           </div>
           <nav className="flex flex-wrap gap-1" aria-label="Zakładki kokpitu">
@@ -102,6 +112,7 @@ export function Cockpit() {
               <HeroSidebar
                 heroes={heroes}
                 selectedId={selectedId}
+                animationKeyOrder={promptAnimationIds}
                 onSelect={(id) => {
                   setCreating(false);
                   setSelectedId(id);
@@ -138,6 +149,7 @@ export function Cockpit() {
                         setCreating(false);
                         setHeroes((prev) => [...prev, h]);
                         setSelectedId(h.id);
+                        void refresh();
                       }}
                     />
                   </motion.div>
@@ -151,6 +163,7 @@ export function Cockpit() {
                   >
                     <HeroCard
                       hero={selected}
+                      animationKeyOrder={promptAnimationIds}
                       onUpdated={(h) => {
                         setHeroes((prev) =>
                           prev.map((x) => (x.id === h.id ? h : x)),
@@ -190,13 +203,17 @@ export function Cockpit() {
             </section>
           </>
         ) : tab === "prompt" ? (
-          <PromptLibrary hero={selected} />
+          <PromptLibrary
+            hero={selected}
+            onLibraryChanged={() => void refresh()}
+          />
         ) : tab === "pliki" ? (
           <div className="flex w-full flex-col gap-6 lg:flex-row">
             <aside className="w-full shrink-0 lg:w-56">
               <HeroSidebar
                 heroes={heroes}
                 selectedId={selectedId}
+                animationKeyOrder={promptAnimationIds}
                 onSelect={(id) => {
                   setCreating(false);
                   setSelectedId(id);
@@ -226,6 +243,7 @@ export function Cockpit() {
               <HeroSidebar
                 heroes={heroes}
                 selectedId={selectedId}
+                animationKeyOrder={promptAnimationIds}
                 onSelect={(id) => {
                   setCreating(false);
                   setSelectedId(id);
@@ -247,6 +265,7 @@ export function Cockpit() {
               {selected ? (
                 <PreviewGallery
                   hero={selected}
+                  animationKeyOrder={promptAnimationIds}
                   onGoPrompt={() => setTab("prompt")}
                   onHeroRefresh={refresh}
                 />
@@ -260,6 +279,10 @@ export function Cockpit() {
               )}
             </section>
           </div>
+        ) : tab === "ustawienia" ? (
+          <section className="w-full min-w-0">
+            <PipelineSettings />
+          </section>
         ) : null}
       </div>
     </div>

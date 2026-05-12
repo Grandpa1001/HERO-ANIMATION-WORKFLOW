@@ -15,8 +15,14 @@ export type PipelineConfig = {
     width: number;
     loop: boolean;
   };
-  folders?: {
-    heroesRoot?: string;
-    promptsFile?: string;
+  /** Domyślne parametry podpowiadane przy pracy z fal.ai (kokpit). */
+  fal: {
+    model: string;
+    duration: number;
+    aspectRatio: string;
+  };
+  folders: {
+    heroesRoot: string;
+    promptsFile: string;
   };
 };

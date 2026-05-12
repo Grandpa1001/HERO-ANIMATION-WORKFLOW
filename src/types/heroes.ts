@@ -21,11 +21,3 @@ export type Hero = {
 export type HeroesFile = {
   heroes: Hero[];
 };
-
-export const DEFAULT_ANIMATION_KEYS = [
-  "idle",
-  "run",
-  "wave",
-  "jump_in",
-  "dance",
-] as const;

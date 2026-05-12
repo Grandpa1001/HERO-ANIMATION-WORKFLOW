@@ -12,22 +12,34 @@ import { ExportPanel } from "./ExportPanel";
 
 type Props = {
   hero: Hero;
+  /** Kolejność slotów = identyfikatory promptów (jak w GET /api/heroes). */
+  animationKeyOrder?: string[];
   onGoPrompt: () => void;
   /** Odświeżenie listy bohaterów (rescan animacji) po zmianie plików. */
   onHeroRefresh: () => void | Promise<void>;
 };
 
-function firstSensibleAnimKey(hero: Hero): string {
-  const keys = sortAnimationKeys(Object.keys(hero.animations));
+function firstSensibleAnimKey(hero: Hero, order: string[]): string {
+  const keys = sortAnimationKeys(Object.keys(hero.animations), order);
   const done = keys.find((k) => hero.animations[k]?.status === "done");
-  return done ?? keys[0] ?? "idle";
+  if (done) return done;
+  if (keys[0]) return keys[0];
+  if (order[0]) return order[0];
+  return "";
 }
 
-export function PreviewGallery({ hero, onGoPrompt, onHeroRefresh }: Props) {
+export function PreviewGallery({
+  hero,
+  animationKeyOrder,
+  onGoPrompt,
+  onHeroRefresh,
+}: Props) {
   const heroRefreshRef = useRef(onHeroRefresh);
   heroRefreshRef.current = onHeroRefresh;
 
-  const [activeKey, setActiveKey] = useState(() => firstSensibleAnimKey(hero));
+  const [activeKey, setActiveKey] = useState(() =>
+    firstSensibleAnimKey(hero, animationKeyOrder ?? []),
+  );
   const [tree, setTree] = useState<HeroFilesTree | null>(null);
   const [settings, setSettings] = useState<{ fps: number; width: number } | null>(
     null,
@@ -35,11 +47,14 @@ export function PreviewGallery({ hero, onGoPrompt, onHeroRefresh }: Props) {
 
   useEffect(() => {
     setActiveKey((prev) => {
-      const keys = sortAnimationKeys(Object.keys(hero.animations));
+      const keys = sortAnimationKeys(
+        Object.keys(hero.animations),
+        animationKeyOrder,
+      );
       if (keys.includes(prev)) return prev;
-      return firstSensibleAnimKey(hero);
+      return firstSensibleAnimKey(hero, animationKeyOrder ?? []);
     });
-  }, [hero]);
+  }, [hero, animationKeyOrder]);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/heroes/${hero.id}/files`);
@@ -104,6 +119,9 @@ export function PreviewGallery({ hero, onGoPrompt, onHeroRefresh }: Props) {
           rasterUrl={rasterUrl}
           mp4Url={mp4Url}
           mp4Filename={mp4File}
+          mp4DownloadFilename={
+            mp4Url && mp4File ? `${hero.id}_${activeKey}.mp4` : null
+          }
           status={entry?.status ?? "missing"}
           animationLabel={formatAnimKey(activeKey)}
         />
@@ -119,6 +137,7 @@ export function PreviewGallery({ hero, onGoPrompt, onHeroRefresh }: Props) {
         <AnimationList
           animations={hero.animations}
           activeKey={activeKey}
+          animationKeyOrder={animationKeyOrder}
           onSelect={setActiveKey}
           onGoPrompt={onGoPrompt}
         />

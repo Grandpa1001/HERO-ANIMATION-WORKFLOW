@@ -11,6 +11,10 @@ import type { Hero } from "@/types/heroes";
 import type { HeroFilesTree } from "@/lib/hero-files";
 import type { RasterExportFormat } from "@/types/pipeline";
 import { heroesRelativeToAssetUrl } from "@/lib/hero-assets";
+import {
+  findMp4FilenameForKey,
+  matchMp4FilenameToKnownKey,
+} from "@/lib/hero-mp4-resolve";
 
 const FMT_EXT: Record<RasterExportFormat, string> = {
   gif: ".gif",
@@ -38,22 +42,24 @@ function dimLabel(w?: number, h?: number): string {
 function countPendingForFormat(
   tree: HeroFilesTree,
   format: RasterExportFormat,
+  animationKeys: string[],
 ): number {
-  const ext = FMT_EXT[format];
-  const names = new Set(tree.rasters.map((r) => r.name));
-  return tree.mp4.filter((m) => {
-    const base = m.name.replace(/\.mp4$/i, "");
-    return !names.has(base + ext);
-  }).length;
+  const names = tree.mp4.map((m) => m.name);
+  let n = 0;
+  for (const key of animationKeys) {
+    if (!findMp4FilenameForKey(tree.heroId, key, names)) continue;
+    if (!hasRasterForAnimationKey(tree, key, format)) n++;
+  }
+  return n;
 }
 
-function hasRasterFormat(
+function hasRasterForAnimationKey(
   tree: HeroFilesTree,
-  mp4Name: string,
+  animationKey: string,
   format: RasterExportFormat,
 ): boolean {
   const ext = FMT_EXT[format];
-  const base = mp4Name.replace(/\.mp4$/i, "");
+  const base = `${tree.heroId}_${animationKey}`;
   return tree.rasters.some((r) => r.name === base + ext);
 }
 
@@ -253,7 +259,13 @@ export function FilesPanel({
   const fps = exportSettings?.fps ?? 12;
   const outW = exportSettings?.width ?? 256;
   const pendingFmt =
-    tree !== null ? countPendingForFormat(tree, exportFormat) : 0;
+    tree !== null
+      ? countPendingForFormat(
+          tree,
+          exportFormat,
+          Object.keys(hero?.animations ?? {}),
+        )
+      : 0;
 
   return (
     <div className="min-w-0 flex-1 space-y-4">
@@ -347,15 +359,21 @@ export function FilesPanel({
                 ? `[${tree.mp4PendingCount} bez żadnego eksportu]`
                 : undefined
             }
-            hint={`Nazwa pliku: „${tree.heroId}_” + klucz animacji + „.mp4” (np. ${tree.heroId}_idle.mp4). Inne nazwy nie są widoczne dla konwersji z listy animacji.`}
+            hint={`Plik MP4: preferowane „${tree.heroId}_” + klucz animacji + „.mp4” (np. ${tree.heroId}_idle.mp4). Możliwy też dopisek przed kluczem (np. ${tree.heroId}_zaraz_idle.mp4 → animacja idle). Pobieranie sugeruje kanoniczną nazwę.`}
             entries={tree.mp4.map((f) => {
               const prefix = `${tree.heroId}_`;
-              const key =
-                f.name.startsWith(prefix) && f.name.toLowerCase().endsWith(".mp4")
+              const knownKeys = hero ? Object.keys(hero.animations) : [];
+              const logicalKey =
+                matchMp4FilenameToKnownKey(tree.heroId, f.name, knownKeys) ??
+                (f.name.startsWith(prefix) && f.name.toLowerCase().endsWith(".mp4")
                   ? f.name.slice(prefix.length, -4)
-                  : f.name.replace(/\.mp4$/i, "");
-              const readyFmt = hasRasterFormat(tree, f.name, exportFormat);
+                  : f.name.replace(/\.mp4$/i, ""));
+              const canonicalMp4 = `${tree.heroId}_${logicalKey}.mp4`;
+              const readyFmt = hasRasterForAnimationKey(tree, logicalKey, exportFormat);
               let meta = `${formatBytes(f.bytes)} · `;
+              if (f.name !== canonicalMp4 && knownKeys.length) {
+                meta += `animacja: ${logicalKey} · `;
+              }
               if (readyFmt) {
                 meta += `gotowy (${exportFormat})`;
               } else if (f.hasPairedExport) {
@@ -366,15 +384,28 @@ export function FilesPanel({
               return {
                 line: `  ${f.name}`,
                 meta,
-                actions: readyFmt ? null : (
-                  <button
-                    type="button"
-                    disabled={busyKey === key}
-                    onClick={() => void convertOne(key)}
-                    className="ml-2 rounded border border-amber-600/80 bg-white px-2 py-0.5 text-xs font-sans font-medium text-amber-900 hover:bg-amber-50 disabled:opacity-50"
-                  >
-                    {busyKey === key ? "…" : `→ ${exportFormat}`}
-                  </button>
+                actions: (
+                  <span className="ml-2 inline-flex flex-wrap items-center gap-1 font-sans">
+                    <a
+                      href={heroesRelativeToAssetUrl(
+                        `${tree.heroId}/mp4/${f.name}`,
+                      )}
+                      download={canonicalMp4}
+                      className="rounded border border-neutral-400 bg-white px-2 py-0.5 text-xs font-medium text-neutral-800 hover:bg-neutral-100"
+                    >
+                      ↓ MP4
+                    </a>
+                    {readyFmt ? null : (
+                      <button
+                        type="button"
+                        disabled={busyKey === logicalKey}
+                        onClick={() => void convertOne(logicalKey)}
+                        className="rounded border border-amber-600/80 bg-white px-2 py-0.5 text-xs font-medium text-amber-900 hover:bg-amber-50 disabled:opacity-50"
+                      >
+                        {busyKey === logicalKey ? "…" : `→ ${exportFormat}`}
+                      </button>
+                    )}
+                  </span>
                 ),
               };
             })}

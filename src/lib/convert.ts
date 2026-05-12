@@ -9,6 +9,8 @@ import {
   loadPipelineConfig,
   normalizeRasterFormat,
 } from "@/lib/pipeline-config";
+import { getHeroById } from "@/lib/heroes-store";
+import { findMp4FilenameForKey } from "@/lib/hero-mp4-resolve";
 
 /** Ustaw binarkę ffmpeg (domyślnie z PATH; opcjonalnie `FFMPEG_PATH`). */
 function applyFfmpegPath(): void {
@@ -47,51 +49,51 @@ export type ConvertRasterResult = {
 
 function resolvePaths(heroId: string, animationKey: string, format: RasterExportFormat) {
   const root = getHeroesRoot();
-  const mp4Name = `${heroId}_${animationKey}.mp4`;
+  const mp4Dir = path.join(root, heroId, "mp4");
+  const names = fs.existsSync(mp4Dir) ? fs.readdirSync(mp4Dir) : [];
+  const mp4Name =
+    findMp4FilenameForKey(heroId, animationKey, names) ??
+    `${heroId}_${animationKey}.mp4`;
   const outName = outputBasename(heroId, animationKey, format);
-  const inputPath = path.join(root, heroId, "mp4", mp4Name);
+  const inputPath = path.join(mp4Dir, mp4Name);
   const outPath = path.join(root, heroId, "gif", outName);
   return { root, inputPath, outPath, mp4Name, outName };
 }
 
-export function animationKeyFromMp4Filename(
-  heroId: string,
-  filename: string,
-): string | null {
-  const prefix = `${heroId}_`;
-  if (!filename.startsWith(prefix) || !filename.toLowerCase().endsWith(".mp4")) {
-    return null;
-  }
-  return filename.slice(prefix.length, -4);
-}
-
-/** MP4 istnieje, brak pliku wyjściowego w podanym formacie (w folderze gif/). */
+/**
+ * Klucze animacji z definicji bohatera, dla których jest MP4 (dowolna dopuszczalna nazwa),
+ * a brak pliku wyjściowego w podanym formacie w folderze gif/.
+ */
 export function listPendingRasterKeys(
   heroId: string,
   format: RasterExportFormat,
+  animationKeys: string[],
 ): string[] {
   const root = getHeroesRoot();
   const mp4Dir = path.join(root, heroId, "mp4");
   const gifDir = path.join(root, heroId, "gif");
   if (!fs.existsSync(mp4Dir)) return [];
+  const names = fs.readdirSync(mp4Dir);
   const ext = RASTER_EXT[format];
-  const keys: string[] = [];
-  for (const name of fs.readdirSync(mp4Dir)) {
-    if (!name.toLowerCase().endsWith(".mp4")) continue;
-    const key = animationKeyFromMp4Filename(heroId, name);
-    if (!key) continue;
+  const pending: string[] = [];
+  for (const key of animationKeys) {
+    const mp4Name = findMp4FilenameForKey(heroId, key, names);
+    if (!mp4Name) continue;
     const outName = `${heroId}_${key}${ext}`;
-    const hasOut = fs.existsSync(path.join(gifDir, outName));
-    if (!hasOut) keys.push(key);
+    if (!fs.existsSync(path.join(gifDir, outName))) {
+      pending.push(key);
+    }
   }
-  return keys;
+  return pending;
 }
 
-/** @deprecated użyj listPendingRasterKeys — domyślny format z pipeline */
+/** Domyślny format z pipeline; klucze z zapisanej definicji bohatera. */
 export function listPendingAnimationKeys(heroId: string): string[] {
+  const hero = getHeroById(heroId);
+  if (!hero) return [];
   const cfg = loadPipelineConfig();
   const fmt = getDefaultExportFormat(cfg);
-  return listPendingRasterKeys(heroId, fmt);
+  return listPendingRasterKeys(heroId, fmt, Object.keys(hero.animations));
 }
 
 function ffprobeDurationSeconds(file: string): Promise<number | undefined> {

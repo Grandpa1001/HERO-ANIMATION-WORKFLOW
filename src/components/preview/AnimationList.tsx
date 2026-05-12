@@ -6,6 +6,8 @@ import { formatAnimKey, sortAnimationKeys } from "@/lib/anim-labels";
 type Props = {
   animations: Record<string, AnimationEntry>;
   activeKey: string;
+  /** Kolejność = identyfikatory promptów z biblioteki. */
+  animationKeyOrder?: string[];
   onSelect: (key: string) => void;
   onGoPrompt?: () => void;
 };
@@ -19,15 +21,16 @@ function statusIcon(status: AnimationEntry["status"], active: boolean): string {
 export function AnimationList({
   animations,
   activeKey,
+  animationKeyOrder,
   onSelect,
   onGoPrompt,
 }: Props) {
-  const keys = sortAnimationKeys(Object.keys(animations));
+  const keys = sortAnimationKeys(Object.keys(animations), animationKeyOrder);
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-sm">
       <p className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
-        Animacje
+        Animacje (id promptu)
       </p>
       <ul className="mt-2 space-y-1">
         {keys.map((key) => {

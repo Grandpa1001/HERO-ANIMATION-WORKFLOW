@@ -18,6 +18,8 @@ type PanelMode = "detail" | "create" | "edit";
 
 type Props = {
   hero: Hero | null;
+  /** Po zmianie listy promptów (dodanie/usunięcie) — odświeżenie bohaterów w kokpicie. */
+  onLibraryChanged?: () => void;
 };
 
 async function fetchPromptsList(
@@ -32,7 +34,7 @@ async function fetchPromptsList(
   return { prompts: data.prompts ?? [] };
 }
 
-export function PromptLibrary({ hero }: Props) {
+export function PromptLibrary({ hero, onLibraryChanged }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [filter, setFilter] = useState<PromptCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -142,6 +144,7 @@ export function PromptLibrary({ hero }: Props) {
         }
         applyPrompts(list, data.prompt?.id ?? null);
         setPanelMode("detail");
+        onLibraryChanged?.();
       } else if (panelMode === "edit" && selectedId) {
         const res = await fetch(`/api/prompts/${selectedId}`, {
           method: "PUT",
@@ -183,6 +186,7 @@ export function PromptLibrary({ hero }: Props) {
       }
       await load();
       setPanelMode("detail");
+      onLibraryChanged?.();
     } catch {
       setLoadError("Błąd sieci przy usuwaniu.");
     }

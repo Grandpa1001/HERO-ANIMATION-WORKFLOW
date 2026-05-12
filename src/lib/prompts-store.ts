@@ -3,7 +3,7 @@ import path from "path";
 import type { Prompt, PromptCategory, PromptsFile } from "@/types/prompts";
 import { PROMPT_CATEGORIES } from "@/types/prompts";
 import { getPromptsFilePath } from "@/lib/paths";
-import { slugifyName } from "@/lib/heroes-store";
+import { slugifyName } from "@/lib/slugify";
 
 const ALLOWED = new Set<string>(PROMPT_CATEGORIES);
 
@@ -33,6 +33,11 @@ function ensurePromptsDir(): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+}
+
+/** Kolejność = kolejność wpisów w bibliotece — ten sam identyfikator łączy prompt, MP4 i eksport. */
+export function listPromptAnimationIds(): string[] {
+  return readPromptsFile().prompts.map((p) => p.id);
 }
 
 export function readPromptsFile(): PromptsFile {

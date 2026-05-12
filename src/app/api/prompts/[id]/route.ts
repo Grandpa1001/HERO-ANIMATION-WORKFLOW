@@ -5,6 +5,7 @@ import {
   normalizePromptCategories,
   updatePrompt,
 } from "@/lib/prompts-store";
+import { reconcileAllHeroesAnimationsWithPrompts } from "@/lib/heroes-store";
 
 export const dynamic = "force-dynamic";
 
@@ -67,5 +68,6 @@ export async function DELETE(_req: Request, context: Ctx) {
   if (!ok) {
     return NextResponse.json({ error: "Nie znaleziono promptu." }, { status: 404 });
   }
+  reconcileAllHeroesAnimationsWithPrompts();
   return NextResponse.json({ ok: true });
 }

@@ -6,8 +6,10 @@ import type {
   Hero,
   HeroesFile,
 } from "@/types/heroes";
-import { DEFAULT_ANIMATION_KEYS } from "@/types/heroes";
 import { getHeroesRoot } from "@/lib/paths";
+import { findMp4FilenameForKey } from "@/lib/hero-mp4-resolve";
+import { listPromptAnimationIds } from "@/lib/prompts-store";
+import { slugifyName } from "@/lib/slugify";
 
 function getDataPath(): string {
   return path.join(process.cwd(), "data", "heroes.json");
@@ -20,17 +22,6 @@ function ensureDataDir(): void {
   }
 }
 
-export function slugifyName(name: string): string {
-  const s = name
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return s || "hero";
-}
-
 function uniqueId(base: string, taken: Set<string>): string {
   let id = base;
   let n = 2;
@@ -40,16 +31,31 @@ function uniqueId(base: string, taken: Set<string>): string {
   return id;
 }
 
-export function defaultAnimations(): Record<string, AnimationEntry> {
+function emptyAnimationEntry(): AnimationEntry {
+  return {
+    mp4: null,
+    gif: null,
+    webp: null,
+    apng: null,
+    status: "missing",
+  };
+}
+
+/** Sloty animacji = identyfikatory promptów z biblioteki (ta sama kolejność co w pliku promptów). */
+export function mergeHeroAnimationsWithPromptCatalog(hero: Hero): Hero {
+  const ids = listPromptAnimationIds();
+  const next: Record<string, AnimationEntry> = {};
+  for (const id of ids) {
+    next[id] = hero.animations[id] ?? emptyAnimationEntry();
+  }
+  return { ...hero, animations: next };
+}
+
+export function animationsFromPromptCatalog(): Record<string, AnimationEntry> {
+  const ids = listPromptAnimationIds();
   const o: Record<string, AnimationEntry> = {};
-  for (const k of DEFAULT_ANIMATION_KEYS) {
-    o[k] = {
-      mp4: null,
-      gif: null,
-      webp: null,
-      apng: null,
-      status: "missing",
-    };
+  for (const id of ids) {
+    o[id] = emptyAnimationEntry();
   }
   return o;
 }
@@ -73,19 +79,24 @@ export function mainPngAbsolute(heroId: string): string {
 }
 
 export function rescanHeroAnimations(hero: Hero): Hero {
+  const synced = mergeHeroAnimationsWithPromptCatalog(hero);
   const root = getHeroesRoot();
   const next: Hero = {
-    ...hero,
-    animations: { ...hero.animations },
+    ...synced,
+    animations: { ...synced.animations },
   };
 
+  const hid = next.id;
+  const mp4Dir = path.join(root, hid, "mp4");
+  const mp4NamesList = fs.existsSync(mp4Dir) ? fs.readdirSync(mp4Dir) : [];
+
   for (const [key] of Object.entries(next.animations)) {
-    const mp4Name = `${hero.id}_${key}.mp4`;
-    const gifName = `${hero.id}_${key}.gif`;
-    const webpName = `${hero.id}_${key}.webp`;
-    const apngName = `${hero.id}_${key}.apng`;
-    const mp4Full = path.join(root, hero.id, "mp4", mp4Name);
-    const gifDir = path.join(root, hero.id, "gif");
+    const mp4Resolved = findMp4FilenameForKey(hid, key, mp4NamesList);
+    const gifName = `${hid}_${key}.gif`;
+    const webpName = `${hid}_${key}.webp`;
+    const apngName = `${hid}_${key}.apng`;
+    const hasMp4 = mp4Resolved !== null;
+    const gifDir = path.join(root, hid, "gif");
     const gifFull = path.join(gifDir, gifName);
     const webpFull = path.join(gifDir, webpName);
     const apngFull = path.join(gifDir, apngName);
@@ -93,7 +104,6 @@ export function rescanHeroAnimations(hero: Hero): Hero {
     const hasW = fs.existsSync(webpFull);
     const hasA = fs.existsSync(apngFull);
     const hasRaster = hasG || hasW || hasA;
-    const hasMp4 = fs.existsSync(mp4Full);
 
     let status: AnimationStatus;
     let mp4: string | null = null;
@@ -106,10 +116,10 @@ export function rescanHeroAnimations(hero: Hero): Hero {
       gif = hasG ? gifName : null;
       webp = hasW ? webpName : null;
       apng = hasA ? apngName : null;
-      mp4 = hasMp4 ? mp4Name : null;
+      mp4 = hasMp4 ? mp4Resolved : null;
     } else if (hasMp4) {
       status = "pending";
-      mp4 = mp4Name;
+      mp4 = mp4Resolved;
       gif = null;
       webp = null;
       apng = null;
@@ -125,6 +135,12 @@ export function rescanHeroAnimations(hero: Hero): Hero {
   }
 
   return next;
+}
+
+export function reconcileAllHeroesAnimationsWithPrompts(): void {
+  const data = readHeroesFile();
+  data.heroes = data.heroes.map((h) => rescanHeroAnimations(h));
+  writeHeroesFile(data);
 }
 
 export function readHeroesFile(): HeroesFile {
@@ -154,12 +170,13 @@ export function getHeroById(id: string): Hero | null {
 }
 
 export function saveHero(hero: Hero): void {
+  const merged = mergeHeroAnimationsWithPromptCatalog(hero);
   const data = readHeroesFile();
-  const idx = data.heroes.findIndex((x) => x.id === hero.id);
+  const idx = data.heroes.findIndex((x) => x.id === merged.id);
   if (idx === -1) {
-    data.heroes.push(hero);
+    data.heroes.push(merged);
   } else {
-    data.heroes[idx] = hero;
+    data.heroes[idx] = merged;
   }
   writeHeroesFile(data);
 }
@@ -181,7 +198,7 @@ export function createHero(input: {
     description: input.description.trim(),
     tags: input.tags,
     png: heroPngLogicalPath(id),
-    animations: defaultAnimations(),
+    animations: animationsFromPromptCatalog(),
   };
   saveHero(hero);
   return rescanHeroAnimations(hero);
@@ -195,15 +212,16 @@ export function updateHero(
   const idx = data.heroes.findIndex((x) => x.id === id);
   if (idx === -1) return null;
   const cur = data.heroes[idx];
+  const mergedCur = mergeHeroAnimationsWithPromptCatalog(cur);
   const next: Hero = {
-    ...cur,
+    ...mergedCur,
     ...patch,
-    name: patch.name !== undefined ? patch.name.trim() : cur.name,
+    name: patch.name !== undefined ? patch.name.trim() : mergedCur.name,
     description:
       patch.description !== undefined
         ? patch.description.trim()
-        : cur.description,
-    tags: patch.tags !== undefined ? patch.tags : cur.tags,
+        : mergedCur.description,
+    tags: patch.tags !== undefined ? patch.tags : mergedCur.tags,
   };
   data.heroes[idx] = next;
   writeHeroesFile(data);

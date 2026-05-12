@@ -7,6 +7,7 @@ import { logicalHeroPathToAssetUrl } from "@/lib/hero-assets";
 
 type Props = {
   hero: Hero;
+  animationKeyOrder?: string[];
   onUpdated: (hero: Hero) => void;
   onPngUploaded: () => void;
   onGoPrompt: () => void;
@@ -29,6 +30,7 @@ function statusRowClass(s: string): string {
 
 export function HeroCard({
   hero,
+  animationKeyOrder,
   onUpdated,
   onPngUploaded,
   onGoPrompt,
@@ -118,7 +120,7 @@ export function HeroCard({
     void uploadFile(f ?? null);
   }
 
-  const animKeys = sortAnimationKeys(Object.keys(hero.animations));
+  const animKeys = sortAnimationKeys(Object.keys(hero.animations), animationKeyOrder);
 
   return (
     <div className="space-y-6">
@@ -271,9 +273,9 @@ export function HeroCard({
           Animacje
         </h3>
         <p className="mt-1 text-sm text-neutral-500">
-          Status z folderów <code className="text-xs">mp4</code> /{" "}
-          <code className="text-xs">gif</code> (nazwa:{" "}
-          <code className="text-xs">{`{id}_{animacja}.mp4`}</code>).
+          Sloty = wpisy w bibliotece promptów (pole <code className="text-xs">id</code>
+          ). Pliki:{" "}
+          <code className="text-xs">{`{id_bohatera}_{id_promptu}.mp4`}</code>.
         </p>
         <ul className="mt-3 divide-y divide-neutral-100">
           {animKeys.map((key) => {

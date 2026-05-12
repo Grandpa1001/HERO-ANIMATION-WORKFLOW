@@ -1,0 +1,25 @@
+import type { PipelineConfig } from "@/types/pipeline";
+
+export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
+  greenscreen: {
+    color: "#00FF00",
+    similarity: 0.3,
+    blend: 0.1,
+  },
+  output: {
+    format: "gif",
+    alternativeFormat: "webp",
+    fps: 12,
+    width: 256,
+    loop: true,
+  },
+  fal: {
+    model: "fal-ai/kling-video",
+    duration: 3,
+    aspectRatio: "9:16",
+  },
+  folders: {
+    heroesRoot: "./heroes",
+    promptsFile: "./prompts/prompts.json",
+  },
+};

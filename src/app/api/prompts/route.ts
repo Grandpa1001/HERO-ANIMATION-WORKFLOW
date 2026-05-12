@@ -4,6 +4,7 @@ import {
   listPrompts,
   normalizePromptCategories,
 } from "@/lib/prompts-store";
+import { reconcileAllHeroesAnimationsWithPrompts } from "@/lib/heroes-store";
 import type { PromptCategory } from "@/types/prompts";
 import { PROMPT_CATEGORIES } from "@/types/prompts";
 
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
       );
     }
     const prompt = addPrompt({ name, text, category });
+    reconcileAllHeroesAnimationsWithPrompts();
     return NextResponse.json({ prompt }, { status: 201 });
   } catch (e) {
     console.error(e);

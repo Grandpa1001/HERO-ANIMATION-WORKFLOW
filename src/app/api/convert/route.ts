@@ -42,7 +42,8 @@ export async function POST(req: Request) {
     if (!isSafeHeroId(heroId)) {
       return NextResponse.json({ error: "Nieprawidłowy bohater." }, { status: 400 });
     }
-    if (!getHeroById(heroId)) {
+    const hero = getHeroById(heroId);
+    if (!hero) {
       return NextResponse.json({ error: "Nie znaleziono bohatera." }, { status: 404 });
     }
 
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     if (body.batchPending === true) {
-      const keys = listPendingRasterKeys(heroId, format);
+      const keys = listPendingRasterKeys(heroId, format, Object.keys(hero.animations));
       const results: {
         animationKey: string;
         ok: boolean;

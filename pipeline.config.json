@@ -1,13 +1,13 @@
 {
   "greenscreen": {
     "color": "#00FF00",
-    "similarity": 0.3,
+    "similarity": 0.2,
     "blend": 0.1
   },
   "output": {
     "format": "gif",
     "alternativeFormat": "webp",
-    "fps": 12,
+    "fps": 20,
     "width": 256,
     "loop": true
   },

@@ -1,5 +1,4 @@
-import { DEFAULT_ANIMATION_KEYS } from "@/types/heroes";
-
+/** Etykieta z id promptu / animacji (np. idle_loop → Idle Loop). */
 export function formatAnimKey(key: string): string {
   return key
     .split("_")
@@ -7,13 +6,21 @@ export function formatAnimKey(key: string): string {
     .join(" ");
 }
 
-export function sortAnimationKeys(keys: string[]): string[] {
-  const order = new Map<string, number>(
-    DEFAULT_ANIMATION_KEYS.map((k, i) => [k, i]),
-  );
+/**
+ * Kolejność listy animacji: jak w bibliotece promptów (`preferredOrder`),
+ * potem ewentualne dodatkowe klucze alfabetycznie.
+ */
+export function sortAnimationKeys(
+  keys: string[],
+  preferredOrder?: string[],
+): string[] {
+  if (!preferredOrder?.length) {
+    return [...keys].sort((a, b) => a.localeCompare(b));
+  }
+  const idx = new Map(preferredOrder.map((id, i) => [id, i]));
   return [...keys].sort((a, b) => {
-    const oa = order.has(a) ? (order.get(a) as number) : 999;
-    const ob = order.has(b) ? (order.get(b) as number) : 999;
+    const oa = idx.has(a) ? (idx.get(a) as number) : 99999;
+    const ob = idx.has(b) ? (idx.get(b) as number) : 99999;
     if (oa !== ob) return oa - ob;
     return a.localeCompare(b);
   });

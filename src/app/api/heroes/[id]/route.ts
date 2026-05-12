@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteHero, getHeroById, updateHero } from "@/lib/heroes-store";
+import { listPromptAnimationIds } from "@/lib/prompts-store";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,10 @@ export async function GET(_req: Request, context: Ctx) {
   if (!hero) {
     return NextResponse.json({ error: "Nie znaleziono bohatera." }, { status: 404 });
   }
-  return NextResponse.json({ hero });
+  return NextResponse.json({
+    hero,
+    promptAnimationIds: listPromptAnimationIds(),
+  });
 }
 
 export async function PUT(req: Request, context: Ctx) {
@@ -32,7 +36,10 @@ export async function PUT(req: Request, context: Ctx) {
     if (!hero) {
       return NextResponse.json({ error: "Nie znaleziono bohatera." }, { status: 404 });
     }
-    return NextResponse.json({ hero });
+    return NextResponse.json({
+      hero,
+      promptAnimationIds: listPromptAnimationIds(),
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Nie udało się zapisać." }, { status: 500 });

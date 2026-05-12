@@ -3,14 +3,18 @@
     {
       "id": "idle_loop",
       "name": "Idle · loop",
-      "category": ["loop"],
-      "text": "Character standing still, subtle breathing motion, slight body sway, hair and clothing moving gently in wind. Seamless loop, green bg #00FF00, 9:16 vertical frame."
+      "category": [
+        "loop"
+      ],
+      "text": "this is an idle animation screen for a game. the character needs to just be grooving and moving slightly in a loop"
     },
     {
-      "id": "wave_hello",
-      "name": "Wave hello · loop",
-      "category": ["interakcja", "loop"],
-      "text": "Character looking at camera, raising one arm and waving enthusiastically with a warm smile. Looped gesture, green bg #00FF00, 9:16 portrait."
+      "id": "walk_hello",
+      "name": "walk-hello",
+      "category": [
+        "one-shot"
+      ],
+      "text": "A character enters slowly from the left edge of the frame, head slightly bowed, shoulders slumped, visibly sad. They walk to the center of the frame, pause, then turn to face the camera — their face brightens into a genuine smile. They raise one hand and wave warmly at the camera. Then they turn back, and walk off to the right, exiting the frame. Single play-through, no loop. Vertical 9:16 frame, solid green background #00FF00."
     }
   ]
 }
