@@ -13,12 +13,19 @@
       "animations": {
         "idle_loop": {
           "mp4": null,
-          "gif": null,
+          "gif": "zara_idle_loop.gif",
           "webp": null,
           "apng": null,
-          "status": "missing"
+          "status": "done"
         },
         "walk_hello": {
+          "mp4": "zara_walk_hello.mp4",
+          "gif": "zara_walk_hello.gif",
+          "webp": null,
+          "apng": null,
+          "status": "done"
+        },
+        "portal": {
           "mp4": null,
           "gif": null,
           "webp": null,

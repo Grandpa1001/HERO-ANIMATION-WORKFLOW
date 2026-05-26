@@ -15,6 +15,14 @@
         "one-shot"
       ],
       "text": "A character enters slowly from the left edge of the frame, head slightly bowed, shoulders slumped, visibly sad. They walk to the center of the frame, pause, then turn to face the camera — their face brightens into a genuine smile. They raise one hand and wave warmly at the camera. Then they turn back, and walk off to the right, exiting the frame. Single play-through, no loop. Vertical 9:16 frame, solid green background #00FF00."
+    },
+    {
+      "id": "portal",
+      "name": "Portal",
+      "category": [
+        "loop"
+      ],
+      "text": "Portal w petli"
     }
   ]
 }
